@@ -18,7 +18,9 @@ func main() {
 	}
 
 	g := &handler.Greeter{}
-	greeter.RegisterGreeterServiceInvocationHandlers(s, g)
+	if err := greeter.RegisterGreeterServiceInvocationHandlers(s, g); err != nil {
+		log.Fatalf("failed to register invocation handlers: %v", err)
+	}
 
 	// start the server
 	if err := s.Start(); err != nil {

@@ -7,16 +7,21 @@ import (
 
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
+	proto "github.com/golang/protobuf/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
 	grpc "google.golang.org/grpc"
 )
 
-const {{.Service.Name | title}}Name = "{{.File.Package | base}}.{{.Service.Name}}"
+const _ = daprc.UndefinedType
+const _ = common.SubscriptionResponseStatusSuccess
+const _ = proto.ProtoPackageIsVersion4
+const _ = invoke.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion7
 
-// aliases
-type (
-	invocationHandler = func(context.Context, *common.InvocationEvent) (*common.Content, error)
-)
+var _ fmt.Stringer
+var _ context.Context
+
+const {{.Service.Name | title}}Name = "{{.File.Package | base}}.{{.Service.Name}}"
 
 // {{.Service.Name}}Handler ...
 type {{.Service.Name}}Handler interface {
@@ -29,8 +34,49 @@ type {{.Service.Name}}Handler interface {
 
 // Register{{.Service.Name}}InvocationHandlers ...
 func Register{{.Service.Name}}InvocationHandlers(s common.Service, impl {{.Service.Name}}Handler) error {
-	return invoke.RegisterInvocationHandlers(s, impl, {{.Service.Name | title}}Name)
+	fns := map[string]invoke.HandlerFunc{
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+		"{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}": _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(impl.{{.Name}}),
+{{- end}}
+{{- end}}
+	}
+
+	for name, fn := range fns {
+		if err := s.AddServiceInvocationHandler(name, fn); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
+
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+
+func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invoke.HandlerFunc {
+	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
+		req := new({{.InputType | splitArray "." | last}})
+		if err := invoke.Decode(in, req); err != nil {
+			return nil, err
+		}
+
+		fn := handler.(func(context.Context, *{{.InputType | splitArray "." | last}}) (*{{.OutputType | splitArray "." | last}}, error))
+		res, err := fn(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := invoke.Encode(res)
+		if err != nil {
+			return nil, err
+		}
+
+		return out, nil
+	}
+}
+{{- end}}
+{{- end}}
 
 type {{.Service.Name}}InvocationClient interface {
 {{- range .Service.Method}}
@@ -58,21 +104,21 @@ func New{{.Service.Name}}InvocationClient(appID string, conn *grpc.ClientConn) {
 func (c *{{$.Service.Name | camelCase}}InvocationClient) {{.Name}}(ctx context.Context, in *{{.InputType | splitArray "." | last}}, opts ...grpc.CallOption) (*{{.OutputType | splitArray "." | last}}, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	reqData, err := invoke.Marshal(in)
+	req, err := proto.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
 
-	resData, err := cc.InvokeMethodWithContent(ctx, c.appID, fmt.Sprintf("%s.%s", {{$.Service.Name | title}}Name, "{{.Name}}"), "POST", &daprc.DataContent{
-		ContentType: invoke.ContentType,
-		Data:        reqData,
+	res, err := cc.InvokeMethodWithContent(ctx, c.appID, "{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}", "POST", &daprc.DataContent{
+		ContentType: "application/x-protobuf",
+		Data:        req,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	out := &{{.OutputType | splitArray "." | last}}{}
-	if err := invoke.Unmarshal(resData, out); err != nil {
+	out := new({{.OutputType | splitArray "." | last}})
+	if err := proto.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
 

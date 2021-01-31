@@ -3,17 +3,25 @@ package v1
 
 import (
 	context "context"
+	fmt "fmt"
 
+	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
+	proto "github.com/golang/protobuf/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
+	grpc "google.golang.org/grpc"
 )
+
+const _ = daprc.UndefinedType
+const _ = common.SubscriptionResponseStatusSuccess
+const _ = proto.ProtoPackageIsVersion4
+const _ = invoke.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion7
+
+var _ fmt.Stringer
+var _ context.Context
 
 const GreeterServiceName = "api.greeter.v1.GreeterService"
-
-// aliases
-type (
-	invocationHandler = func(context.Context, *common.InvocationEvent) (*common.Content, error)
-)
 
 // GreeterServiceHandler ...
 type GreeterServiceHandler interface {
@@ -22,5 +30,77 @@ type GreeterServiceHandler interface {
 
 // RegisterGreeterServiceInvocationHandlers ...
 func RegisterGreeterServiceInvocationHandlers(s common.Service, impl GreeterServiceHandler) error {
-	return invoke.RegisterInvocationHandlers(s, impl, GreeterServiceName)
+	fns := map[string]invoke.HandlerFunc{
+		"api.greeter.v1.GreeterService/Hello": _GreeterService_Hello_Invocation_Handler(impl.Hello),
+	}
+
+	for name, fn := range fns {
+		if err := s.AddServiceInvocationHandler(name, fn); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func _GreeterService_Hello_Invocation_Handler(handler interface{}) invoke.HandlerFunc {
+	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
+		req := new(HelloRequest)
+		if err := invoke.Decode(in, req); err != nil {
+			return nil, err
+		}
+
+		fn := handler.(func(context.Context, *HelloRequest) (*HelloResponse, error))
+		res, err := fn(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := invoke.Encode(res)
+		if err != nil {
+			return nil, err
+		}
+
+		return out, nil
+	}
+}
+
+type GreeterServiceInvocationClient interface {
+	Hello(context.Context, *HelloRequest, ...grpc.CallOption) (*HelloResponse, error)
+}
+
+type GreeterserviceInvocationClient struct {
+	appID string
+	conn  *grpc.ClientConn
+}
+
+func NewGreeterServiceInvocationClient(appID string, conn *grpc.ClientConn) GreeterServiceInvocationClient {
+	return &GreeterserviceInvocationClient{
+		appID: appID,
+		conn:  conn,
+	}
+}
+
+func (c *GreeterserviceInvocationClient) Hello(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloResponse, error) {
+	cc := daprc.NewClientWithConnection(c.conn)
+
+	req, err := proto.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := cc.InvokeMethodWithContent(ctx, c.appID, "api.greeter.v1.GreeterService/Hello", "POST", &daprc.DataContent{
+		ContentType: "application/x-protobuf",
+		Data:        req,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	out := new(HelloResponse)
+	if err := proto.Unmarshal(res, out); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }

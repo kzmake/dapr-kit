@@ -7,16 +7,21 @@ import (
 
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
+	proto "github.com/golang/protobuf/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
 	grpc "google.golang.org/grpc"
 )
 
-const BobServiceName = "api.bob.v1.BobService"
+const _ = daprc.UndefinedType
+const _ = common.SubscriptionResponseStatusSuccess
+const _ = proto.ProtoPackageIsVersion4
+const _ = invoke.SupportPackageIsVersion1
+const _ = grpc.SupportPackageIsVersion7
 
-// aliases
-type (
-	invocationHandler = func(context.Context, *common.InvocationEvent) (*common.Content, error)
-)
+var _ fmt.Stringer
+var _ context.Context
+
+const BobServiceName = "api.bob.v1.BobService"
 
 // BobServiceHandler ...
 type BobServiceHandler interface {
@@ -25,7 +30,39 @@ type BobServiceHandler interface {
 
 // RegisterBobServiceInvocationHandlers ...
 func RegisterBobServiceInvocationHandlers(s common.Service, impl BobServiceHandler) error {
-	return invoke.RegisterInvocationHandlers(s, impl, BobServiceName)
+	fns := map[string]invoke.HandlerFunc{
+		"api.bob.v1.BobService/Handle": _BobService_Handle_Invocation_Handler(impl.Handle),
+	}
+
+	for name, fn := range fns {
+		if err := s.AddServiceInvocationHandler(name, fn); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.HandlerFunc {
+	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
+		req := new(HandleRequest)
+		if err := invoke.Decode(in, req); err != nil {
+			return nil, err
+		}
+
+		fn := handler.(func(context.Context, *HandleRequest) (*HandleResponse, error))
+		res, err := fn(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		out, err := invoke.Encode(res)
+		if err != nil {
+			return nil, err
+		}
+
+		return out, nil
+	}
 }
 
 type BobServiceInvocationClient interface {
@@ -47,21 +84,21 @@ func NewBobServiceInvocationClient(appID string, conn *grpc.ClientConn) BobServi
 func (c *BobserviceInvocationClient) Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	reqData, err := invoke.Marshal(in)
+	req, err := proto.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
 
-	resData, err := cc.InvokeMethodWithContent(ctx, c.appID, fmt.Sprintf("%s.%s", BobServiceName, "Handle"), "POST", &daprc.DataContent{
-		ContentType: invoke.ContentType,
-		Data:        reqData,
+	res, err := cc.InvokeMethodWithContent(ctx, c.appID, "api.bob.v1.BobService/Handle", "POST", &daprc.DataContent{
+		ContentType: "application/x-protobuf",
+		Data:        req,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	out := &HandleResponse{}
-	if err := invoke.Unmarshal(resData, out); err != nil {
+	out := new(HandleResponse)
+	if err := proto.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
 
