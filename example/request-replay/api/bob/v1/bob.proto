@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package api.bob.v1;
+
+option go_package = "github.com/kzmake/dapr-kit/example/request-replay/api/bob/v1";
+
+service BobService {
+  rpc Handle(HandleRequest) returns (HandleResponse);
+}
+
+message HandleRequest {}
+
+message HandleResponse {
+  string msg = 1;
+}
