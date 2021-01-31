@@ -6,9 +6,9 @@ import (
 	fmt "fmt"
 
 	daprc "github.com/dapr/go-sdk/client"
-	grpc "google.golang.org/grpc"
 	common "github.com/dapr/go-sdk/service/common"
 	invoke "github.com/kzmake/dapr-kit/invoke"
+	grpc "google.golang.org/grpc"
 )
 
 const AliceServiceName = "api.alice.v1.AliceService"
