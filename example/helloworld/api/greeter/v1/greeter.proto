@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package api.greeter.v1;
+
+option go_package = "github.com/kzmake/dapr-kit/example/helloworld/api/greeter/v1";
+
+service GreeterService {
+  rpc Hello(HelloRequest) returns (HelloResponse);
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloResponse {
+  string msg = 1;
+}
