@@ -10,7 +10,7 @@ import (
 	binding "github.com/kzmake/dapr-kit/binding"
 	encoding "github.com/kzmake/dapr-kit/encoding"
 	proto "github.com/kzmake/dapr-kit/encoding/proto"
-	invoke "github.com/kzmake/dapr-kit/invoke"
+	invocation "github.com/kzmake/dapr-kit/invocation"
 	grpc "google.golang.org/grpc"
 )
 
@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
-var _ invoke.Def
+var _ invocation.Def
 var _ binding.Def
 
 const {{.Service.Name | title}}Name = "{{.File.Package | base}}.{{.Service.Name}}"
@@ -36,7 +36,7 @@ type {{.Service.Name}}Handler interface {
 
 // Register{{.Service.Name}}InvocationHandler ...
 func Register{{.Service.Name}}InvocationHandler(s common.Service, impl {{.Service.Name}}Handler) error {
-	fns := map[string]invoke.Func{
+	fns := map[string]invocation.Func{
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}
 		"{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}": _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(impl.{{.Name}}),
@@ -56,7 +56,7 @@ func Register{{.Service.Name}}InvocationHandler(s common.Service, impl {{.Servic
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}
 
-func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invoke.Func {
+func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invocation.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
 		e, err := encoding.New(in.ContentType)
 		if err != nil {

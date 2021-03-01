@@ -10,7 +10,7 @@ import (
 	binding "github.com/kzmake/dapr-kit/binding"
 	encoding "github.com/kzmake/dapr-kit/encoding"
 	proto "github.com/kzmake/dapr-kit/encoding/proto"
-	invoke "github.com/kzmake/dapr-kit/invoke"
+	invocation "github.com/kzmake/dapr-kit/invocation"
 	grpc "google.golang.org/grpc"
 )
 
@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
-var _ invoke.Def
+var _ invocation.Def
 var _ binding.Def
 
 const BobServiceName = "event.bob.v1.BobService"
@@ -32,7 +32,7 @@ type BobServiceHandler interface {
 
 // RegisterBobServiceInvocationHandler ...
 func RegisterBobServiceInvocationHandler(s common.Service, impl BobServiceHandler) error {
-	fns := map[string]invoke.Func{
+	fns := map[string]invocation.Func{
 		"event.bob.v1.BobService/Handle": _BobService_Handle_Invocation_Handler(impl.Handle),
 	}
 
@@ -45,7 +45,7 @@ func RegisterBobServiceInvocationHandler(s common.Service, impl BobServiceHandle
 	return nil
 }
 
-func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.Func {
+func _BobService_Handle_Invocation_Handler(handler interface{}) invocation.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
 		e, err := encoding.New(in.ContentType)
 		if err != nil {

@@ -10,7 +10,7 @@ import (
 	binding "github.com/kzmake/dapr-kit/binding"
 	encoding "github.com/kzmake/dapr-kit/encoding"
 	proto "github.com/kzmake/dapr-kit/encoding/proto"
-	invoke "github.com/kzmake/dapr-kit/invoke"
+	invocation "github.com/kzmake/dapr-kit/invocation"
 	grpc "google.golang.org/grpc"
 )
 
@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
-var _ invoke.Def
+var _ invocation.Def
 var _ binding.Def
 
 const GreeterServiceName = "api.greeter.v1.GreeterService"
@@ -32,7 +32,7 @@ type GreeterServiceHandler interface {
 
 // RegisterGreeterServiceInvocationHandler ...
 func RegisterGreeterServiceInvocationHandler(s common.Service, impl GreeterServiceHandler) error {
-	fns := map[string]invoke.Func{
+	fns := map[string]invocation.Func{
 		"api.greeter.v1.GreeterService/Hello": _GreeterService_Hello_Invocation_Handler(impl.Hello),
 	}
 
@@ -45,7 +45,7 @@ func RegisterGreeterServiceInvocationHandler(s common.Service, impl GreeterServi
 	return nil
 }
 
-func _GreeterService_Hello_Invocation_Handler(handler interface{}) invoke.Func {
+func _GreeterService_Hello_Invocation_Handler(handler interface{}) invocation.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
 		e, err := encoding.New(in.ContentType)
 		if err != nil {
