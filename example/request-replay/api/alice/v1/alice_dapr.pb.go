@@ -16,11 +16,12 @@ import (
 
 const _ = daprc.UndefinedType
 const _ = common.SubscriptionResponseStatusSuccess
-const _ = invoke.DaprPackageIsVersion1
 const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
+var _ invoke.Def
+var _ binding.Def
 
 const AliceServiceName = "api.alice.v1.AliceService"
 
@@ -29,8 +30,8 @@ type AliceServiceHandler interface {
 	Handle(context.Context, *HandleRequest) (*HandleResponse, error)
 }
 
-// RegisterAliceServiceInvocationHandlers ...
-func RegisterAliceServiceInvocationHandlers(s common.Service, impl AliceServiceHandler) error {
+// RegisterAliceServiceInvocationHandler ...
+func RegisterAliceServiceInvocationHandler(s common.Service, impl AliceServiceHandler) error {
 	fns := map[string]invoke.Func{
 		"api.alice.v1.AliceService/Handle": _AliceService_Handle_Invocation_Handler(impl.Handle),
 	}

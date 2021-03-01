@@ -25,7 +25,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create the handler: %v", err)
 	}
-	if err := alice.RegisterAliceServiceInvocationHandlers(s, a); err != nil {
+	if err := alice.RegisterAliceServiceInvocationHandler(s, a); err != nil {
 		log.Fatalf("failed to register invocation handlers: %v", err)
 	}
 

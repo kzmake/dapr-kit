@@ -16,11 +16,12 @@ import (
 
 const _ = daprc.UndefinedType
 const _ = common.SubscriptionResponseStatusSuccess
-const _ = invoke.DaprPackageIsVersion1
 const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
+var _ invoke.Def
+var _ binding.Def
 
 const {{.Service.Name | title}}Name = "{{.File.Package | base}}.{{.Service.Name}}"
 
@@ -33,8 +34,8 @@ type {{.Service.Name}}Handler interface {
 {{- end}}
 }
 
-// Register{{.Service.Name}}InvocationHandlers ...
-func Register{{.Service.Name}}InvocationHandlers(s common.Service, impl {{.Service.Name}}Handler) error {
+// Register{{.Service.Name}}InvocationHandler ...
+func Register{{.Service.Name}}InvocationHandler(s common.Service, impl {{.Service.Name}}Handler) error {
 	fns := map[string]invoke.Func{
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}

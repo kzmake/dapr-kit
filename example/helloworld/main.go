@@ -22,7 +22,7 @@ func main() {
 	}
 
 	g := &handler.Greeter{}
-	if err := greeter.RegisterGreeterServiceInvocationHandlers(s, g); err != nil {
+	if err := greeter.RegisterGreeterServiceInvocationHandler(s, g); err != nil {
 		log.Fatalf("failed to register invocation handlers: %v", err)
 	}
 

@@ -16,11 +16,12 @@ import (
 
 const _ = daprc.UndefinedType
 const _ = common.SubscriptionResponseStatusSuccess
-const _ = invoke.DaprPackageIsVersion1
 const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
+var _ invoke.Def
+var _ binding.Def
 
 const GreeterServiceName = "api.greeter.v1.GreeterService"
 
@@ -29,8 +30,8 @@ type GreeterServiceHandler interface {
 	Hello(context.Context, *HelloRequest) (*HelloResponse, error)
 }
 
-// RegisterGreeterServiceInvocationHandlers ...
-func RegisterGreeterServiceInvocationHandlers(s common.Service, impl GreeterServiceHandler) error {
+// RegisterGreeterServiceInvocationHandler ...
+func RegisterGreeterServiceInvocationHandler(s common.Service, impl GreeterServiceHandler) error {
 	fns := map[string]invoke.Func{
 		"api.greeter.v1.GreeterService/Hello": _GreeterService_Hello_Invocation_Handler(impl.Hello),
 	}

@@ -16,11 +16,12 @@ import (
 
 const _ = daprc.UndefinedType
 const _ = common.SubscriptionResponseStatusSuccess
-const _ = invoke.DaprPackageIsVersion1
 const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
 var _ context.Context
+var _ invoke.Def
+var _ binding.Def
 
 const BobServiceName = "api.bob.v1.BobService"
 
@@ -29,8 +30,8 @@ type BobServiceHandler interface {
 	Handle(context.Context, *HandleRequest) (*HandleResponse, error)
 }
 
-// RegisterBobServiceInvocationHandlers ...
-func RegisterBobServiceInvocationHandlers(s common.Service, impl BobServiceHandler) error {
+// RegisterBobServiceInvocationHandler ...
+func RegisterBobServiceInvocationHandler(s common.Service, impl BobServiceHandler) error {
 	fns := map[string]invoke.Func{
 		"api.bob.v1.BobService/Handle": _BobService_Handle_Invocation_Handler(impl.Handle),
 	}

@@ -21,7 +21,7 @@ func main() {
 	}
 
 	b := &handler.Bob{}
-	if err := bob.RegisterBobServiceInvocationHandlers(s, b); err != nil {
+	if err := bob.RegisterBobServiceInvocationHandler(s, b); err != nil {
 		log.Fatalf("failed to register invocation handlers: %v", err)
 	}
 
