@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type BobServiceClient interface {
-	Handle(ctx context.Context, in *HandledRequest, opts ...grpc.CallOption) (*HandledResponse, error)
+	Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (*HandleResponse, error)
 }
 
 type bobServiceClient struct {
@@ -29,8 +29,8 @@ func NewBobServiceClient(cc grpc.ClientConnInterface) BobServiceClient {
 	return &bobServiceClient{cc}
 }
 
-func (c *bobServiceClient) Handle(ctx context.Context, in *HandledRequest, opts ...grpc.CallOption) (*HandledResponse, error) {
-	out := new(HandledResponse)
+func (c *bobServiceClient) Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (*HandleResponse, error) {
+	out := new(HandleResponse)
 	err := c.cc.Invoke(ctx, "/event.bob.v1.BobService/Handle", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (c *bobServiceClient) Handle(ctx context.Context, in *HandledRequest, opts 
 // All implementations must embed UnimplementedBobServiceServer
 // for forward compatibility
 type BobServiceServer interface {
-	Handle(context.Context, *HandledRequest) (*HandledResponse, error)
+	Handle(context.Context, *HandleRequest) (*HandleResponse, error)
 	mustEmbedUnimplementedBobServiceServer()
 }
 
@@ -50,7 +50,7 @@ type BobServiceServer interface {
 type UnimplementedBobServiceServer struct {
 }
 
-func (UnimplementedBobServiceServer) Handle(context.Context, *HandledRequest) (*HandledResponse, error) {
+func (UnimplementedBobServiceServer) Handle(context.Context, *HandleRequest) (*HandleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Handle not implemented")
 }
 func (UnimplementedBobServiceServer) mustEmbedUnimplementedBobServiceServer() {}
@@ -67,7 +67,7 @@ func RegisterBobServiceServer(s grpc.ServiceRegistrar, srv BobServiceServer) {
 }
 
 func _BobService_Handle_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HandledRequest)
+	in := new(HandleRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func _BobService_Handle_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: "/event.bob.v1.BobService/Handle",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(BobServiceServer).Handle(ctx, req.(*HandledRequest))
+		return srv.(BobServiceServer).Handle(ctx, req.(*HandleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

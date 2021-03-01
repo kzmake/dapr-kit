@@ -18,10 +18,10 @@ var _ bob.BobServiceServer = (*Bob)(nil)
 var _ bob.BobServiceHandler = (*Bob)(nil)
 
 // Handle ...
-func (c *Bob) Handle(_ context.Context, req *bob.HandledRequest) (*bob.HandledResponse, error) {
+func (c *Bob) Handle(_ context.Context, req *bob.HandleRequest) (*bob.HandleResponse, error) {
 	log.Printf("[%s] recv *bob.HandleRequest: %s", req.GetId(), req.String())
 	log.Printf("[%s] \t do something...", req.GetId())
 	time.Sleep(10 * time.Second)
 	log.Printf("[%s] ...completed", req.GetId())
-	return &bob.HandledResponse{}, nil
+	return &bob.HandleResponse{}, nil
 }

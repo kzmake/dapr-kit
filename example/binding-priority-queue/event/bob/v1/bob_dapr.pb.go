@@ -27,7 +27,7 @@ const BobServiceName = "event.bob.v1.BobService"
 
 // BobServiceHandler ...
 type BobServiceHandler interface {
-	Handle(context.Context, *HandledRequest) (*HandledResponse, error)
+	Handle(context.Context, *HandleRequest) (*HandleResponse, error)
 }
 
 // RegisterBobServiceInvocationHandler ...
@@ -52,12 +52,12 @@ func _BobService_Handle_Invocation_Handler(handler interface{}) invocation.Func 
 			return nil, err
 		}
 
-		req := new(HandledRequest)
+		req := new(HandleRequest)
 		if err := e.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
-		fn := handler.(func(context.Context, *HandledRequest) (*HandledResponse, error))
+		fn := handler.(func(context.Context, *HandleRequest) (*HandleResponse, error))
 		res, err := fn(ctx, req)
 		if err != nil {
 			return nil, err
@@ -97,12 +97,12 @@ func _BobService_Handle_Binding_Handler(handler interface{}) binding.Func {
 	return func(ctx context.Context, in *common.BindingEvent) ([]byte, error) {
 		e := proto.NewEncoding()
 
-		req := new(HandledRequest)
+		req := new(HandleRequest)
 		if err := e.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
-		fn := handler.(func(context.Context, *HandledRequest) (*HandledResponse, error))
+		fn := handler.(func(context.Context, *HandleRequest) (*HandleResponse, error))
 		res, err := fn(ctx, req)
 		if err != nil {
 			return nil, err
@@ -118,7 +118,7 @@ func _BobService_Handle_Binding_Handler(handler interface{}) binding.Func {
 }
 
 type BobServiceInvocationClient interface {
-	Handle(context.Context, *HandledRequest, ...grpc.CallOption) (*HandledResponse, error)
+	Handle(context.Context, *HandleRequest, ...grpc.CallOption) (*HandleResponse, error)
 }
 
 type bobserviceInvocationClient struct {
@@ -134,8 +134,8 @@ func NewBobServiceInvocationClient(appID string, conn *grpc.ClientConn) BobServi
 }
 
 func (c *bobserviceInvocationClient) Handle(
-	ctx context.Context, in *HandledRequest, opts ...grpc.CallOption,
-) (*HandledResponse, error) {
+	ctx context.Context, in *HandleRequest, opts ...grpc.CallOption,
+) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
 	e := proto.NewEncoding()
@@ -153,7 +153,7 @@ func (c *bobserviceInvocationClient) Handle(
 		return nil, err
 	}
 
-	out := new(HandledResponse)
+	out := new(HandleResponse)
 	if err := e.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
@@ -162,7 +162,7 @@ func (c *bobserviceInvocationClient) Handle(
 }
 
 type BobServiceBindingClient interface {
-	Handle(context.Context, *HandledRequest, map[string]string) (*HandledResponse, error)
+	Handle(context.Context, *HandleRequest, map[string]string) (*HandleResponse, error)
 }
 
 type bobserviceBindingClient struct {
@@ -176,8 +176,8 @@ func NewBobServiceBindingClient(conn *grpc.ClientConn) BobServiceBindingClient {
 }
 
 func (c *bobserviceBindingClient) Handle(
-	ctx context.Context, in *HandledRequest, meta map[string]string,
-) (*HandledResponse, error) {
+	ctx context.Context, in *HandleRequest, meta map[string]string,
+) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
 	e := proto.NewEncoding()
@@ -202,7 +202,7 @@ func (c *bobserviceBindingClient) Handle(
 		return nil, err
 	}
 
-	out := new(HandledResponse)
+	out := new(HandleResponse)
 	if err := e.Unmarshal(res.Data, out); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (c *bobserviceBindingClient) Handle(
 }
 
 type BobServiceOutputBindingClient interface {
-	Handle(context.Context, *HandledRequest, map[string]string) error
+	Handle(context.Context, *HandleRequest, map[string]string) error
 }
 
 type bobserviceOutputBindingClient struct {
@@ -225,7 +225,7 @@ func NewBobServiceOutputBindingClient(conn *grpc.ClientConn) BobServiceOutputBin
 }
 
 func (c *bobserviceOutputBindingClient) Handle(
-	ctx context.Context, in *HandledRequest, meta map[string]string,
+	ctx context.Context, in *HandleRequest, meta map[string]string,
 ) error {
 	cc := daprc.NewClientWithConnection(c.conn)
 

@@ -27,7 +27,9 @@ proto/gen:
 
 .PHONY: proto/lint
 proto/lint:
-	buf check lint
+	buf lint example/binding-priority-queue
+	buf lint example/request-replay
+	buf lint example/helloworld
 
 .PHONY: proto/fmt
 proto/fmt:

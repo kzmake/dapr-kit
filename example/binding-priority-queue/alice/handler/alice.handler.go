@@ -2,13 +2,10 @@ package handler
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"strconv"
 
-	cloudevents "github.com/cloudevents/sdk-go/v2"
 	"github.com/dapr/components-contrib/metadata"
-	daprc "github.com/dapr/go-sdk/client"
 	"github.com/google/uuid"
 	"google.golang.org/grpc"
 
@@ -16,42 +13,10 @@ import (
 	bob "github.com/kzmake/dapr-kit/example/binding-priority-queue/event/bob/v1"
 )
 
-// NewHandled ...
-func NewHandled(name string, in *alice.HandleRequest, md map[string]string) (*daprc.InvokeBindingRequest, error) {
-	fmt.Printf("in: %+v", in)
-	fmt.Printf("md: %+v", md)
-
-	if md == nil {
-		md = map[string]string{}
-	}
-
-	e := cloudevents.NewEvent(cloudevents.VersionV1)
-	e.SetID(uuid.New().String())
-	e.SetSource("example/uri")
-	e.SetType("example.type")
-
-	if err := e.SetData(cloudevents.ApplicationJSON, in); err != nil {
-		return nil, err
-	}
-
-	d, err := e.MarshalJSON()
-	if err != nil {
-		return nil, err
-	}
-
-	return &daprc.InvokeBindingRequest{
-		Name:      name,
-		Operation: "create",
-		Metadata:  md,
-		Data:      d,
-	}, nil
-}
-
 // Alice ...
 type Alice struct {
 	alice.UnimplementedAliceServiceServer
 
-	name string
 	conn *grpc.ClientConn
 }
 
@@ -77,7 +42,7 @@ func (c *Alice) Handle(ctx context.Context, req *alice.HandleRequest) (*alice.Ha
 
 	md := map[string]string{metadata.PriorityMetadataKey: strconv.FormatInt(req.GetPriority(), 10)}
 
-	e := &bob.HandledRequest{
+	e := &bob.HandleRequest{
 		Id:       uuid.New().String(),
 		Metadata: md,
 	}
