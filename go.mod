@@ -5,7 +5,6 @@ go 1.15
 replace github.com/dapr/components-contrib => github.com/dapr/components-contrib v1.0.0
 
 require (
-	github.com/cloudevents/sdk-go/v2 v2.3.1
 	github.com/dapr/components-contrib v1.0.0
 	github.com/dapr/go-sdk v1.0.0
 	github.com/golang/protobuf v1.4.3
