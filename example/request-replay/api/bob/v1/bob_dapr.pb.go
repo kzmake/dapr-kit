@@ -7,6 +7,7 @@ import (
 
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
+	binding "github.com/kzmake/dapr-kit/binding"
 	content "github.com/kzmake/dapr-kit/content"
 	proto "github.com/kzmake/dapr-kit/content/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
@@ -30,7 +31,7 @@ type BobServiceHandler interface {
 
 // RegisterBobServiceInvocationHandlers ...
 func RegisterBobServiceInvocationHandlers(s common.Service, impl BobServiceHandler) error {
-	fns := map[string]invoke.HandlerFunc{
+	fns := map[string]invoke.Func{
 		"api.bob.v1.BobService/Handle": _BobService_Handle_Invocation_Handler(impl.Handle),
 	}
 
@@ -43,7 +44,7 @@ func RegisterBobServiceInvocationHandlers(s common.Service, impl BobServiceHandl
 	return nil
 }
 
-func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.HandlerFunc {
+func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
 		b, err := content.NewBinder(in.ContentType)
 		if err != nil {
@@ -76,23 +77,62 @@ func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.HandlerFu
 	}
 }
 
-type BobServiceInvocationClient interface {
-	Handle(context.Context, *HandleRequest, ...grpc.CallOption,) (*HandleResponse, error)
+// RegisterBobServiceBindingHandler ...
+func RegisterBobServiceBindingHandler(s common.Service, impl BobServiceHandler) error {
+	fns := map[string]binding.Func{
+		"api.bob.v1.BobService/Handle": _BobService_Handle_Binding_Handler(impl.Handle),
+	}
+
+	for name, fn := range fns {
+		if err := s.AddBindingInvocationHandler(name, fn); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-type BobserviceInvocationClient struct {
+func _BobService_Handle_Binding_Handler(handler interface{}) binding.Func {
+	return func(ctx context.Context, in *common.BindingEvent) ([]byte, error) {
+		b := proto.NewBinder()
+
+		req := new(HandleRequest)
+		if err := b.Unmarshal(in.Data, req); err != nil {
+			return nil, err
+		}
+
+		fn := handler.(func(context.Context, *HandleRequest) (*HandleResponse, error))
+		res, err := fn(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		d, err := b.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+
+		return d, nil
+	}
+}
+
+type BobServiceInvocationClient interface {
+	Handle(context.Context, *HandleRequest, ...grpc.CallOption) (*HandleResponse, error)
+}
+
+type bobserviceInvocationClient struct {
 	appID string
 	conn  *grpc.ClientConn
 }
 
 func NewBobServiceInvocationClient(appID string, conn *grpc.ClientConn) BobServiceInvocationClient {
-	return &BobserviceInvocationClient{
+	return &bobserviceInvocationClient{
 		appID: appID,
 		conn:  conn,
 	}
 }
 
-func (c *BobserviceInvocationClient) Handle(
+func (c *bobserviceInvocationClient) Handle(
 	ctx context.Context, in *HandleRequest, opts ...grpc.CallOption,
 ) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
@@ -118,4 +158,93 @@ func (c *BobserviceInvocationClient) Handle(
 	}
 
 	return out, nil
+}
+
+type BobServiceBindingClient interface {
+	Handle(context.Context, *HandleRequest, map[string]string) (*HandleResponse, error)
+}
+
+type bobserviceBindingClient struct {
+	conn *grpc.ClientConn
+}
+
+func NewBobServiceBindingClient(conn *grpc.ClientConn) BobServiceBindingClient {
+	return &bobserviceBindingClient{
+		conn: conn,
+	}
+}
+
+func (c *bobserviceBindingClient) Handle(
+	ctx context.Context, in *HandleRequest, meta map[string]string,
+) (*HandleResponse, error) {
+	cc := daprc.NewClientWithConnection(c.conn)
+
+	b := proto.NewBinder()
+
+	d, err := b.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &daprc.InvokeBindingRequest{
+		Name:      "api.bob.v1.BobService/Handle",
+		Operation: "create",
+		Data:      d,
+		Metadata:  map[string]string{},
+	}
+
+	res, err := cc.InvokeBinding(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	out := new(HandleResponse)
+	if err := b.Unmarshal(res.Data, out); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+
+type BobServiceOutputBindingClient interface {
+	Handle(context.Context, *HandleRequest, map[string]string) error
+}
+
+type bobserviceOutputBindingClient struct {
+	conn *grpc.ClientConn
+}
+
+func NewBobServiceOutputBindingClient(conn *grpc.ClientConn) BobServiceOutputBindingClient {
+	return &bobserviceOutputBindingClient{
+		conn: conn,
+	}
+}
+
+func (c *bobserviceOutputBindingClient) Handle(
+	ctx context.Context, in *HandleRequest, meta map[string]string,
+) error {
+	cc := daprc.NewClientWithConnection(c.conn)
+
+	b := proto.NewBinder()
+
+	d, err := b.Marshal(in)
+	if err != nil {
+		return err
+	}
+
+	req := &daprc.InvokeBindingRequest{
+		Name:      "api.bob.v1.BobService/Handle",
+		Operation: "create",
+		Data:      d,
+		Metadata:  map[string]string{},
+	}
+
+	if err := cc.InvokeOutputBinding(ctx, req); err != nil {
+		return err
+	}
+
+	return nil
 }

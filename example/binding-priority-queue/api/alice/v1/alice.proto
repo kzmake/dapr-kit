@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package api.alice.v1;
+
+option go_package = "github.com/kzmake/dapr-kit/example/binding-priority-queue/api/alice/v1";
+
+service AliceService {
+  rpc Handle(HandleRequest) returns (HandleResponse);
+}
+
+message HandleRequest {
+  int64 priority = 1;
+}
+
+message HandleResponse {
+  Task task = 1;
+}
+
+message Task {
+  string id = 1;
+}

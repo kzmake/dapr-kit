@@ -94,5 +94,5 @@ var _AliceService_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "example/request-replay/api/alice/v1/alice.proto",
+	Metadata: "example/binding-priority-queue/api/alice/v1/alice.proto",
 }

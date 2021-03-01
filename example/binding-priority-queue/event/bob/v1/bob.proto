@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package event.bob.v1;
+
+option go_package = "github.com/kzmake/dapr-kit/example/binding-priority-queue/event/bob/v1";
+
+service BobService {
+  rpc Handle(HandledRequest) returns (HandledResponse);
+}
+
+message HandledRequest {
+  string id = 1;
+  map<string, string> metadata = 100;
+}
+
+message HandledResponse {}

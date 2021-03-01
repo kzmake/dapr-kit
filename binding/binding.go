@@ -7,7 +7,7 @@ import (
 )
 
 // Func ...
-type Func func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error)
+type Func func(ctx context.Context, in *common.BindingEvent) ([]byte, error)
 
 // Def ...
 type Def struct {

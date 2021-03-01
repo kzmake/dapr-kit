@@ -1,0 +1,22 @@
+apiVersion: dapr.io/v1alpha1
+kind: Component
+metadata:
+  name: event.bob.v1.BobService/Handle
+spec:
+  type: bindings.rabbitmq
+  version: v1
+  metadata:
+    - name: queueName
+      value: event.bob.v1.BobService/Handle
+    - name: host
+      value: amqp://guest:guest@rabbitmq:5672
+    - name: durable
+      value: true
+    - name: deleteWhenUnused
+      value: false
+    - name: prefetchCount
+      value: 1
+    - name: exclusive
+      value: false
+    - name: maxPriority
+      value: 3

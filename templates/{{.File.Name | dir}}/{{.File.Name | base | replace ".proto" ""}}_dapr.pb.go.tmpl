@@ -7,6 +7,7 @@ import (
 
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
+	binding "github.com/kzmake/dapr-kit/binding"
 	content "github.com/kzmake/dapr-kit/content"
 	proto "github.com/kzmake/dapr-kit/content/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
@@ -34,7 +35,7 @@ type {{.Service.Name}}Handler interface {
 
 // Register{{.Service.Name}}InvocationHandlers ...
 func Register{{.Service.Name}}InvocationHandlers(s common.Service, impl {{.Service.Name}}Handler) error {
-	fns := map[string]invoke.HandlerFunc{
+	fns := map[string]invoke.Func{
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}
 		"{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}": _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(impl.{{.Name}}),
@@ -54,7 +55,7 @@ func Register{{.Service.Name}}InvocationHandlers(s common.Service, impl {{.Servi
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}
 
-func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invoke.HandlerFunc {
+func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invoke.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
 		b, err := content.NewBinder(in.ContentType)
 		if err != nil {
@@ -89,21 +90,69 @@ func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invok
 {{- end}}
 {{- end}}
 
+// Register{{.Service.Name}}BindingHandler ...
+func Register{{.Service.Name}}BindingHandler(s common.Service, impl {{.Service.Name}}Handler) error {
+	fns := map[string]binding.Func{
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+		"{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}": _{{$.Service.Name}}_{{.Name}}_Binding_Handler(impl.{{.Name}}),
+{{- end}}
+{{- end}}
+	}
+
+	for name, fn := range fns {
+		if err := s.AddBindingInvocationHandler(name, fn); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+
+func _{{$.Service.Name}}_{{.Name}}_Binding_Handler(handler interface{}) binding.Func {
+	return func(ctx context.Context, in *common.BindingEvent) ([]byte, error) {
+		b := proto.NewBinder()
+
+		req := new({{.InputType | splitArray "." | last}})
+		if err := b.Unmarshal(in.Data, req); err != nil {
+			return nil, err
+		}
+
+		fn := handler.(func(context.Context, *{{.InputType | splitArray "." | last}}) (*{{.OutputType | splitArray "." | last}}, error))
+		res, err := fn(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+
+		d, err := b.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+
+		return d, nil
+	}
+}
+{{- end}}
+{{- end}}
+
 type {{.Service.Name}}InvocationClient interface {
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}
-	{{.Name}}(context.Context, *{{.InputType | splitArray "." | last}}, ...grpc.CallOption,) (*{{.OutputType | splitArray "." | last}}, error)
+	{{.Name}}(context.Context, *{{.InputType | splitArray "." | last}}, ...grpc.CallOption) (*{{.OutputType | splitArray "." | last}}, error)
 {{- end}}
 {{- end}}
 }
 
-type {{.Service.Name | camelCase}}InvocationClient struct {
+type {{.Service.Name | lowerCamelCase}}InvocationClient struct {
 	appID string
 	conn  *grpc.ClientConn
 }
 
 func New{{.Service.Name}}InvocationClient(appID string, conn *grpc.ClientConn) {{.Service.Name}}InvocationClient {
-	return &{{.Service.Name | camelCase}}InvocationClient{
+	return &{{.Service.Name | lowerCamelCase}}InvocationClient{
 		appID: appID,
 		conn:  conn,
 	}
@@ -112,7 +161,7 @@ func New{{.Service.Name}}InvocationClient(appID string, conn *grpc.ClientConn) {
 {{- range .Service.Method}}
 {{- if and (not .ServerStreaming) (not .ClientStreaming)}}
 
-func (c *{{$.Service.Name | camelCase}}InvocationClient) {{.Name}}(
+func (c *{{$.Service.Name | lowerCamelCase}}InvocationClient) {{.Name}}(
 	ctx context.Context, in *{{.InputType | splitArray "." | last}}, opts ...grpc.CallOption,
 ) (*{{.OutputType | splitArray "." | last}}, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
@@ -138,6 +187,115 @@ func (c *{{$.Service.Name | camelCase}}InvocationClient) {{.Name}}(
 	}
 
 	return out, nil
+}
+{{- end}}
+{{- end}}
+
+
+type {{.Service.Name}}BindingClient interface {
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+	{{.Name}}(context.Context, *{{.InputType | splitArray "." | last}}, map[string]string) (*{{.OutputType | splitArray "." | last}}, error)
+{{- end}}
+{{- end}}
+}
+
+type {{.Service.Name | lowerCamelCase}}BindingClient struct {
+	conn  *grpc.ClientConn
+}
+
+func New{{.Service.Name}}BindingClient(conn *grpc.ClientConn) {{.Service.Name}}BindingClient {
+	return &{{.Service.Name | lowerCamelCase}}BindingClient{
+		conn:  conn,
+	}
+}
+
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+
+func (c *{{$.Service.Name | lowerCamelCase}}BindingClient) {{.Name}}(
+	ctx context.Context, in *{{.InputType | splitArray "." | last}}, meta map[string]string,
+) (*{{.OutputType | splitArray "." | last}}, error) {
+	cc := daprc.NewClientWithConnection(c.conn)
+
+	b := proto.NewBinder()
+
+	d, err := b.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &daprc.InvokeBindingRequest{
+		Name:      "{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}",
+		Operation: "create",
+		Data:      d,
+		Metadata:  map[string]string{},
+	}
+
+	res, err := cc.InvokeBinding(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	out := new({{.OutputType | splitArray "." | last}})
+	if err := b.Unmarshal(res.Data, out); err != nil {
+		return nil, err
+	}
+
+	return out, nil
+}
+{{- end}}
+{{- end}}
+
+type {{.Service.Name}}OutputBindingClient interface {
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+	{{.Name}}(context.Context, *{{.InputType | splitArray "." | last}}, map[string]string) error
+{{- end}}
+{{- end}}
+}
+
+
+type {{.Service.Name | lowerCamelCase}}OutputBindingClient struct {
+	conn  *grpc.ClientConn
+}
+
+func New{{.Service.Name}}OutputBindingClient(conn *grpc.ClientConn) {{.Service.Name}}OutputBindingClient {
+	return &{{.Service.Name | lowerCamelCase}}OutputBindingClient{
+		conn:  conn,
+	}
+}
+
+{{- range .Service.Method}}
+{{- if and (not .ServerStreaming) (not .ClientStreaming)}}
+
+func (c *{{$.Service.Name | lowerCamelCase}}OutputBindingClient) {{.Name}}(
+	ctx context.Context, in *{{.InputType | splitArray "." | last}}, meta map[string]string,
+) error {
+	cc := daprc.NewClientWithConnection(c.conn)
+
+	b := proto.NewBinder()
+
+	d, err := b.Marshal(in)
+	if err != nil {
+		return err
+	}
+
+	req := &daprc.InvokeBindingRequest{
+		Name:      "{{$.File.Package | base}}.{{$.Service.Name}}/{{.Name}}",
+		Operation: "create",
+		Data:      d,
+		Metadata:  map[string]string{},
+	}
+
+	if err := cc.InvokeOutputBinding(ctx, req); err != nil {
+		return err
+	}
+
+	return nil
 }
 {{- end}}
 {{- end}}

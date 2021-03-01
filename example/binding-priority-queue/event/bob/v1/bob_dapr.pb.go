@@ -22,17 +22,17 @@ const _ = grpc.SupportPackageIsVersion7
 var _ fmt.Stringer
 var _ context.Context
 
-const GreeterServiceName = "api.greeter.v1.GreeterService"
+const BobServiceName = "event.bob.v1.BobService"
 
-// GreeterServiceHandler ...
-type GreeterServiceHandler interface {
-	Hello(context.Context, *HelloRequest) (*HelloResponse, error)
+// BobServiceHandler ...
+type BobServiceHandler interface {
+	Handle(context.Context, *HandledRequest) (*HandledResponse, error)
 }
 
-// RegisterGreeterServiceInvocationHandlers ...
-func RegisterGreeterServiceInvocationHandlers(s common.Service, impl GreeterServiceHandler) error {
+// RegisterBobServiceInvocationHandlers ...
+func RegisterBobServiceInvocationHandlers(s common.Service, impl BobServiceHandler) error {
 	fns := map[string]invoke.Func{
-		"api.greeter.v1.GreeterService/Hello": _GreeterService_Hello_Invocation_Handler(impl.Hello),
+		"event.bob.v1.BobService/Handle": _BobService_Handle_Invocation_Handler(impl.Handle),
 	}
 
 	for name, fn := range fns {
@@ -44,19 +44,19 @@ func RegisterGreeterServiceInvocationHandlers(s common.Service, impl GreeterServ
 	return nil
 }
 
-func _GreeterService_Hello_Invocation_Handler(handler interface{}) invoke.Func {
+func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
 		b, err := content.NewBinder(in.ContentType)
 		if err != nil {
 			return nil, err
 		}
 
-		req := new(HelloRequest)
+		req := new(HandledRequest)
 		if err := b.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
-		fn := handler.(func(context.Context, *HelloRequest) (*HelloResponse, error))
+		fn := handler.(func(context.Context, *HandledRequest) (*HandledResponse, error))
 		res, err := fn(ctx, req)
 		if err != nil {
 			return nil, err
@@ -68,7 +68,7 @@ func _GreeterService_Hello_Invocation_Handler(handler interface{}) invoke.Func {
 		}
 
 		out := &common.Content{
-			DataTypeURL: "api.greeter.v1.GreeterService/Hello",
+			DataTypeURL: "event.bob.v1.BobService/Handle",
 			ContentType: "application/json",
 			Data:        d,
 		}
@@ -77,10 +77,10 @@ func _GreeterService_Hello_Invocation_Handler(handler interface{}) invoke.Func {
 	}
 }
 
-// RegisterGreeterServiceBindingHandler ...
-func RegisterGreeterServiceBindingHandler(s common.Service, impl GreeterServiceHandler) error {
+// RegisterBobServiceBindingHandler ...
+func RegisterBobServiceBindingHandler(s common.Service, impl BobServiceHandler) error {
 	fns := map[string]binding.Func{
-		"api.greeter.v1.GreeterService/Hello": _GreeterService_Hello_Binding_Handler(impl.Hello),
+		"event.bob.v1.BobService/Handle": _BobService_Handle_Binding_Handler(impl.Handle),
 	}
 
 	for name, fn := range fns {
@@ -92,16 +92,16 @@ func RegisterGreeterServiceBindingHandler(s common.Service, impl GreeterServiceH
 	return nil
 }
 
-func _GreeterService_Hello_Binding_Handler(handler interface{}) binding.Func {
+func _BobService_Handle_Binding_Handler(handler interface{}) binding.Func {
 	return func(ctx context.Context, in *common.BindingEvent) ([]byte, error) {
 		b := proto.NewBinder()
 
-		req := new(HelloRequest)
+		req := new(HandledRequest)
 		if err := b.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
-		fn := handler.(func(context.Context, *HelloRequest) (*HelloResponse, error))
+		fn := handler.(func(context.Context, *HandledRequest) (*HandledResponse, error))
 		res, err := fn(ctx, req)
 		if err != nil {
 			return nil, err
@@ -116,25 +116,25 @@ func _GreeterService_Hello_Binding_Handler(handler interface{}) binding.Func {
 	}
 }
 
-type GreeterServiceInvocationClient interface {
-	Hello(context.Context, *HelloRequest, ...grpc.CallOption) (*HelloResponse, error)
+type BobServiceInvocationClient interface {
+	Handle(context.Context, *HandledRequest, ...grpc.CallOption) (*HandledResponse, error)
 }
 
-type greeterserviceInvocationClient struct {
+type bobserviceInvocationClient struct {
 	appID string
 	conn  *grpc.ClientConn
 }
 
-func NewGreeterServiceInvocationClient(appID string, conn *grpc.ClientConn) GreeterServiceInvocationClient {
-	return &greeterserviceInvocationClient{
+func NewBobServiceInvocationClient(appID string, conn *grpc.ClientConn) BobServiceInvocationClient {
+	return &bobserviceInvocationClient{
 		appID: appID,
 		conn:  conn,
 	}
 }
 
-func (c *greeterserviceInvocationClient) Hello(
-	ctx context.Context, in *HelloRequest, opts ...grpc.CallOption,
-) (*HelloResponse, error) {
+func (c *bobserviceInvocationClient) Handle(
+	ctx context.Context, in *HandledRequest, opts ...grpc.CallOption,
+) (*HandledResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
 	b := proto.NewBinder()
@@ -144,7 +144,7 @@ func (c *greeterserviceInvocationClient) Hello(
 		return nil, err
 	}
 
-	res, err := cc.InvokeMethodWithContent(ctx, c.appID, "api.greeter.v1.GreeterService/Hello", "POST", &daprc.DataContent{
+	res, err := cc.InvokeMethodWithContent(ctx, c.appID, "event.bob.v1.BobService/Handle", "POST", &daprc.DataContent{
 		ContentType: "application/x-protobuf",
 		Data:        req,
 	})
@@ -152,7 +152,7 @@ func (c *greeterserviceInvocationClient) Hello(
 		return nil, err
 	}
 
-	out := new(HelloResponse)
+	out := new(HandledResponse)
 	if err := b.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
@@ -160,23 +160,23 @@ func (c *greeterserviceInvocationClient) Hello(
 	return out, nil
 }
 
-type GreeterServiceBindingClient interface {
-	Hello(context.Context, *HelloRequest, map[string]string) (*HelloResponse, error)
+type BobServiceBindingClient interface {
+	Handle(context.Context, *HandledRequest, map[string]string) (*HandledResponse, error)
 }
 
-type greeterserviceBindingClient struct {
+type bobserviceBindingClient struct {
 	conn *grpc.ClientConn
 }
 
-func NewGreeterServiceBindingClient(conn *grpc.ClientConn) GreeterServiceBindingClient {
-	return &greeterserviceBindingClient{
+func NewBobServiceBindingClient(conn *grpc.ClientConn) BobServiceBindingClient {
+	return &bobserviceBindingClient{
 		conn: conn,
 	}
 }
 
-func (c *greeterserviceBindingClient) Hello(
-	ctx context.Context, in *HelloRequest, meta map[string]string,
-) (*HelloResponse, error) {
+func (c *bobserviceBindingClient) Handle(
+	ctx context.Context, in *HandledRequest, meta map[string]string,
+) (*HandledResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
 	b := proto.NewBinder()
@@ -187,7 +187,7 @@ func (c *greeterserviceBindingClient) Hello(
 	}
 
 	req := &daprc.InvokeBindingRequest{
-		Name:      "api.greeter.v1.GreeterService/Hello",
+		Name:      "event.bob.v1.BobService/Handle",
 		Operation: "create",
 		Data:      d,
 		Metadata:  map[string]string{},
@@ -201,7 +201,7 @@ func (c *greeterserviceBindingClient) Hello(
 		return nil, err
 	}
 
-	out := new(HelloResponse)
+	out := new(HandledResponse)
 	if err := b.Unmarshal(res.Data, out); err != nil {
 		return nil, err
 	}
@@ -209,22 +209,22 @@ func (c *greeterserviceBindingClient) Hello(
 	return out, nil
 }
 
-type GreeterServiceOutputBindingClient interface {
-	Hello(context.Context, *HelloRequest, map[string]string) error
+type BobServiceOutputBindingClient interface {
+	Handle(context.Context, *HandledRequest, map[string]string) error
 }
 
-type greeterserviceOutputBindingClient struct {
+type bobserviceOutputBindingClient struct {
 	conn *grpc.ClientConn
 }
 
-func NewGreeterServiceOutputBindingClient(conn *grpc.ClientConn) GreeterServiceOutputBindingClient {
-	return &greeterserviceOutputBindingClient{
+func NewBobServiceOutputBindingClient(conn *grpc.ClientConn) BobServiceOutputBindingClient {
+	return &bobserviceOutputBindingClient{
 		conn: conn,
 	}
 }
 
-func (c *greeterserviceOutputBindingClient) Hello(
-	ctx context.Context, in *HelloRequest, meta map[string]string,
+func (c *bobserviceOutputBindingClient) Handle(
+	ctx context.Context, in *HandledRequest, meta map[string]string,
 ) error {
 	cc := daprc.NewClientWithConnection(c.conn)
 
@@ -236,7 +236,7 @@ func (c *greeterserviceOutputBindingClient) Hello(
 	}
 
 	req := &daprc.InvokeBindingRequest{
-		Name:      "api.greeter.v1.GreeterService/Hello",
+		Name:      "event.bob.v1.BobService/Handle",
 		Operation: "create",
 		Data:      d,
 		Metadata:  map[string]string{},
