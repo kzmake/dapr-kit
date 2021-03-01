@@ -1,0 +1,27 @@
+root = "."
+tmp_dir = "/tmp"
+
+[build]
+cmd = "go build -o /tmp/app github.com/kzmake/dapr-kit/example/request-replay/bob"
+bin = "/tmp/app"
+include_ext = ["go"]
+exclude_dir = ["assets", "tmp", "vendor"]
+include_dir = []
+exclude_file = []
+exclude_unchanged = true
+delay = 1000 # ms
+stop_on_error = true
+send_interrupt = false
+kill_delay = 500 # ms
+
+[log]
+time = false
+
+[color]
+main = "magenta"
+watcher = "cyan"
+build = "yellow"
+runner = "green"
+
+[misc]
+clean_on_exit = true

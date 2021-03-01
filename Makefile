@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := help
 
-.PHONY: generate
-generate: proto/generate ## gernerate codes
+.PHONY: gen
+gen: proto/gen ## gernerate codes
 	go generate ./...
 
 .PHONY: lint
@@ -12,15 +12,18 @@ lint: proto/lint ## lint codes
 fmt: proto/fmt ## format codes
 	goimports -w .
 
-.PHONY: proto
-proto/generate:
-	protoc \
-	--proto_path=.:. \
-	--proto_path=.:${GOPATH}/src \
-	--go_out=paths=source_relative:. \
-	--go-grpc_out=paths=source_relative:. \
-	--gotemplate_out=destination_dir=.,template_dir=../../template:. \
-	./api/greeter/v1/*.proto
+.PHONY: proto/gen
+proto/gen:
+	@for f in example/**/**/**/**/*.proto; do \
+		protoc \
+			--proto_path=.:. \
+			--proto_path=.:${GOPATH}/src \
+			--go_out=paths=source_relative:. \
+			--go-grpc_out=paths=source_relative:. \
+			--gotemplate_out=destination_dir=.,template_dir=./templates:. \
+			$$f; \
+		echo $$f; \
+	done
 
 .PHONY: proto/lint
 proto/lint:
@@ -34,7 +37,7 @@ proto/fmt:
 .PHONY: __
 __:
 	@echo "\033[33m"
-	@echo "helloworld"
+	@echo "github.com/kzmake/dapr-kit"
 	@echo "\033[0m"
 
 .PHONY: help

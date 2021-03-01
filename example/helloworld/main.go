@@ -10,9 +10,13 @@ import (
 	"github.com/kzmake/dapr-kit/example/helloworld/handler"
 )
 
+const (
+	appAddress = ":4000"
+)
+
 func main() {
 	// create a Dapr service server
-	s, err := daprd.NewService(":50001")
+	s, err := daprd.NewService(appAddress)
 	if err != nil {
 		log.Fatalf("failed to start the server: %v", err)
 	}

@@ -4,7 +4,6 @@ package v1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -94,5 +93,5 @@ var _GreeterService_serviceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "api/greeter/v1/greeter.proto",
+	Metadata: "example/helloworld/api/greeter/v1/greeter.proto",
 }

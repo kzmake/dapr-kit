@@ -1,0 +1,54 @@
+version: "3.7"
+
+x-kit:
+  kit: &kit
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+    volumes:
+      - ../..:/go/src/github.com/kzmake/dapr-kit
+      - pkg-cache:/go/pkg/mod
+      - build-cache:/root/.cache/go-build
+
+x-sidecar:
+  sidecar: &sidecar
+    image: daprio/daprd:1.0.0
+    volumes:
+      - ./components:/components
+    depends_on:
+      - placement
+    restart: always
+
+services:
+  # for developer
+  dev:
+    <<: *kit
+    command: "bash -c 'trap : SIGTERM SIGINT; sleep infinity & wait'"
+  dev-dapr:
+    <<: *sidecar
+    command: "./daprd -app-id dev -dapr-http-port 3000 -dapr-grpc-port 3500 -components-path /components -placement-host-address placement:50000"
+    network_mode: service:dev
+  # alice + dapr sidecar
+  alice:
+    <<: *kit
+    command: "air -c example/request-replay/alice/.air.toml"
+  alice-dapr:
+    <<: *sidecar
+    command: "./daprd -app-id alice -app-port 4000 -app-protocol grpc -dapr-http-port 3000 -dapr-grpc-port 3500 -components-path /components -placement-host-address placement:50000"
+    network_mode: service:alice
+  # bob + dapr sidecar
+  bob:
+    <<: *kit
+    command: "air -c example/request-replay/bob/.air.toml"
+  bob-dapr:
+    <<: *sidecar
+    command: "./daprd -app-id bob -app-port 4000 -app-protocol grpc -dapr-http-port 3000 -dapr-grpc-port 3500 -components-path /components -placement-host-address placement:50000"
+    network_mode: service:bob
+  # dapr placement service
+  placement:
+    image: daprio/dapr
+    command: "./placement -port 50000"
+
+volumes:
+  pkg-cache:
+  build-cache:

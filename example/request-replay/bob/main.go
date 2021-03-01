@@ -10,8 +10,12 @@ import (
 	"github.com/kzmake/dapr-kit/example/request-replay/bob/handler"
 )
 
+const (
+	appAddress = ":4000"
+)
+
 func main() {
-	s, err := daprd.NewService(":4002")
+	s, err := daprd.NewService(appAddress)
 	if err != nil {
 		log.Fatalf("failed to start the server: %v", err)
 	}

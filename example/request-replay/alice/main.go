@@ -10,13 +10,18 @@ import (
 	"github.com/kzmake/dapr-kit/example/request-replay/alice/handler"
 )
 
+const (
+	appAddress  = ":4000"
+	daprAddress = ":3500"
+)
+
 func main() {
-	s, err := daprd.NewService(":4001")
+	s, err := daprd.NewService(appAddress)
 	if err != nil {
 		log.Fatalf("failed to create the server: %v", err)
 	}
 
-	a, err := handler.NewAlice("bob", "localhost:3500")
+	a, err := handler.NewAlice("bob", daprAddress)
 	if err != nil {
 		log.Fatalf("failed to create the handler: %v", err)
 	}

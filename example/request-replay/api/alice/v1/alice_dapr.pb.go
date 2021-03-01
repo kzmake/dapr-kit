@@ -7,15 +7,15 @@ import (
 
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
-	proto "github.com/golang/protobuf/proto"
+	content "github.com/kzmake/dapr-kit/content"
+	proto "github.com/kzmake/dapr-kit/content/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
 	grpc "google.golang.org/grpc"
 )
 
 const _ = daprc.UndefinedType
 const _ = common.SubscriptionResponseStatusSuccess
-const _ = proto.ProtoPackageIsVersion4
-const _ = invoke.SupportPackageIsVersion1
+const _ = invoke.DaprPackageIsVersion1
 const _ = grpc.SupportPackageIsVersion7
 
 var _ fmt.Stringer
@@ -45,8 +45,13 @@ func RegisterAliceServiceInvocationHandlers(s common.Service, impl AliceServiceH
 
 func _AliceService_Handle_Invocation_Handler(handler interface{}) invoke.HandlerFunc {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
+		b, err := content.NewBinder(in.ContentType)
+		if err != nil {
+			return nil, err
+		}
+
 		req := new(HandleRequest)
-		if err := invoke.Decode(in, req); err != nil {
+		if err := b.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
@@ -56,9 +61,15 @@ func _AliceService_Handle_Invocation_Handler(handler interface{}) invoke.Handler
 			return nil, err
 		}
 
-		out, err := invoke.Encode(res)
+		d, err := b.Marshal(res)
 		if err != nil {
 			return nil, err
+		}
+
+		out := &common.Content{
+			DataTypeURL: "api.alice.v1.AliceService/Handle",
+			ContentType: "application/json",
+			Data:        d,
 		}
 
 		return out, nil
@@ -66,7 +77,7 @@ func _AliceService_Handle_Invocation_Handler(handler interface{}) invoke.Handler
 }
 
 type AliceServiceInvocationClient interface {
-	Handle(context.Context, *HandleRequest, ...grpc.CallOption) (*HandleResponse, error)
+	Handle(context.Context, *HandleRequest, ...grpc.CallOption,) (*HandleResponse, error)
 }
 
 type AliceserviceInvocationClient struct {
@@ -81,10 +92,14 @@ func NewAliceServiceInvocationClient(appID string, conn *grpc.ClientConn) AliceS
 	}
 }
 
-func (c *AliceserviceInvocationClient) Handle(ctx context.Context, in *HandleRequest, opts ...grpc.CallOption) (*HandleResponse, error) {
+func (c *AliceserviceInvocationClient) Handle(
+	ctx context.Context, in *HandleRequest, opts ...grpc.CallOption,
+) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	req, err := proto.Marshal(in)
+	b := proto.NewBinder()
+
+	req, err := b.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +113,7 @@ func (c *AliceserviceInvocationClient) Handle(ctx context.Context, in *HandleReq
 	}
 
 	out := new(HandleResponse)
-	if err := proto.Unmarshal(res, out); err != nil {
+	if err := b.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
 
