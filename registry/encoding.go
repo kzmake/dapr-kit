@@ -5,6 +5,6 @@ import (
 )
 
 var (
-	// Binders ...
-	Binders = map[string]daprkit.Binder{}
+	// Encodings ...
+	Encodings = map[string]daprkit.Encoding{}
 )

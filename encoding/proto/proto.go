@@ -16,18 +16,18 @@ const (
 )
 
 func init() {
-	registry.Binders[ContentTypeApplicationXProtobuf] = NewBinder()
-	registry.Binders[ContentTypeApplocationGRPC] = NewBinder()
+	registry.Encodings[ContentTypeApplicationXProtobuf] = NewEncoding()
+	registry.Encodings[ContentTypeApplocationGRPC] = NewEncoding()
 }
 
-type protoBinder struct{}
+type protoEncoding struct{}
 
-// NewBinder ...
-func NewBinder() kit.Binder {
-	return &protoBinder{}
+// NewEncoding ...
+func NewEncoding() kit.Encoding {
+	return &protoEncoding{}
 }
 
-func (c *protoBinder) Marshal(v interface{}) ([]byte, error) {
+func (c *protoEncoding) Marshal(v interface{}) ([]byte, error) {
 	m, ok := v.(proto.Message)
 	if !ok {
 		return nil, xerrors.Errorf("failed to cast proto.Message")
@@ -36,7 +36,7 @@ func (c *protoBinder) Marshal(v interface{}) ([]byte, error) {
 	return proto.Marshal(m)
 }
 
-func (c *protoBinder) Unmarshal(data []byte, v interface{}) error {
+func (c *protoEncoding) Unmarshal(data []byte, v interface{}) error {
 	m, ok := v.(proto.Message)
 	if !ok {
 		return xerrors.Errorf("failed to cast proto.Message")

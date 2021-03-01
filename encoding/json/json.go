@@ -13,23 +13,23 @@ const (
 )
 
 func init() {
-	registry.Binders[ContentTypeApplicationJSON] = NewBinder()
+	registry.Encodings[ContentTypeApplicationJSON] = NewEncoding()
 }
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
-type jsonBinder struct{}
+type jsonEncoding struct{}
 
-// NewBinder ...
-func NewBinder() kit.Binder {
-	return &jsonBinder{}
+// NewEncoding ...
+func NewEncoding() kit.Encoding {
+	return &jsonEncoding{}
 }
 
-func (c *jsonBinder) Marshal(v interface{}) ([]byte, error) {
+func (c *jsonEncoding) Marshal(v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
 
-func (c *jsonBinder) Unmarshal(data []byte, v interface{}) error {
+func (c *jsonEncoding) Unmarshal(data []byte, v interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}

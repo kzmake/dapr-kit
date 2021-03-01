@@ -1,4 +1,4 @@
-package content
+package encoding
 
 import (
 	"fmt"
@@ -10,20 +10,20 @@ import (
 	"github.com/kzmake/dapr-kit/registry"
 
 	// supported content types
-	_ "github.com/kzmake/dapr-kit/content/json"
-	_ "github.com/kzmake/dapr-kit/content/proto"
+	_ "github.com/kzmake/dapr-kit/encoding/json"
+	_ "github.com/kzmake/dapr-kit/encoding/proto"
 )
 
 var (
-	// NewBinder ...
-	NewBinder = newBinder
+	// New ...
+	New = new
 )
 
-// newBinder ...
-func newBinder(contentType string) (kit.Binder, error) {
+// new ...
+func new(contentType string) (kit.Encoding, error) {
 	ct := strings.TrimSpace(strings.Split(contentType, ";")[0])
 	fmt.Println(ct)
-	if b, ok := registry.Binders[ct]; ok {
+	if b, ok := registry.Encodings[ct]; ok {
 		return b, nil
 	}
 

@@ -8,8 +8,8 @@ import (
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
 	binding "github.com/kzmake/dapr-kit/binding"
-	content "github.com/kzmake/dapr-kit/content"
-	proto "github.com/kzmake/dapr-kit/content/proto"
+	encoding "github.com/kzmake/dapr-kit/encoding"
+	proto "github.com/kzmake/dapr-kit/encoding/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
 	grpc "google.golang.org/grpc"
 )
@@ -58,13 +58,13 @@ func Register{{.Service.Name}}InvocationHandler(s common.Service, impl {{.Servic
 
 func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invoke.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
-		b, err := content.NewBinder(in.ContentType)
+		e, err := encoding.New(in.ContentType)
 		if err != nil {
 			return nil, err
 		}
 
 		req := new({{.InputType | splitArray "." | last}})
-		if err := b.Unmarshal(in.Data, req); err != nil {
+		if err := e.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
@@ -74,7 +74,7 @@ func _{{$.Service.Name}}_{{.Name}}_Invocation_Handler(handler interface{}) invok
 			return nil, err
 		}
 
-		d, err := b.Marshal(res)
+		d, err := e.Marshal(res)
 		if err != nil {
 			return nil, err
 		}
@@ -115,10 +115,10 @@ func Register{{.Service.Name}}BindingHandler(s common.Service, impl {{.Service.N
 
 func _{{$.Service.Name}}_{{.Name}}_Binding_Handler(handler interface{}) binding.Func {
 	return func(ctx context.Context, in *common.BindingEvent) ([]byte, error) {
-		b := proto.NewBinder()
+		e := proto.NewEncoding()
 
 		req := new({{.InputType | splitArray "." | last}})
-		if err := b.Unmarshal(in.Data, req); err != nil {
+		if err := e.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
@@ -128,7 +128,7 @@ func _{{$.Service.Name}}_{{.Name}}_Binding_Handler(handler interface{}) binding.
 			return nil, err
 		}
 
-		d, err := b.Marshal(res)
+		d, err := e.Marshal(res)
 		if err != nil {
 			return nil, err
 		}
@@ -167,9 +167,9 @@ func (c *{{$.Service.Name | lowerCamelCase}}InvocationClient) {{.Name}}(
 ) (*{{.OutputType | splitArray "." | last}}, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	b := proto.NewBinder()
+	e := proto.NewEncoding()
 
-	req, err := b.Marshal(in)
+	req, err := e.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (c *{{$.Service.Name | lowerCamelCase}}InvocationClient) {{.Name}}(
 	}
 
 	out := new({{.OutputType | splitArray "." | last}})
-	if err := b.Unmarshal(res, out); err != nil {
+	if err := e.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
 
@@ -219,9 +219,9 @@ func (c *{{$.Service.Name | lowerCamelCase}}BindingClient) {{.Name}}(
 ) (*{{.OutputType | splitArray "." | last}}, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	b := proto.NewBinder()
+	e := proto.NewEncoding()
 
-	d, err := b.Marshal(in)
+	d, err := e.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (c *{{$.Service.Name | lowerCamelCase}}BindingClient) {{.Name}}(
 	}
 
 	out := new({{.OutputType | splitArray "." | last}})
-	if err := b.Unmarshal(res.Data, out); err != nil {
+	if err := e.Unmarshal(res.Data, out); err != nil {
 		return nil, err
 	}
 
@@ -278,9 +278,9 @@ func (c *{{$.Service.Name | lowerCamelCase}}OutputBindingClient) {{.Name}}(
 ) error {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	b := proto.NewBinder()
+	e := proto.NewEncoding()
 
-	d, err := b.Marshal(in)
+	d, err := e.Marshal(in)
 	if err != nil {
 		return err
 	}

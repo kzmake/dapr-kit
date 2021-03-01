@@ -8,8 +8,8 @@ import (
 	daprc "github.com/dapr/go-sdk/client"
 	common "github.com/dapr/go-sdk/service/common"
 	binding "github.com/kzmake/dapr-kit/binding"
-	content "github.com/kzmake/dapr-kit/content"
-	proto "github.com/kzmake/dapr-kit/content/proto"
+	encoding "github.com/kzmake/dapr-kit/encoding"
+	proto "github.com/kzmake/dapr-kit/encoding/proto"
 	invoke "github.com/kzmake/dapr-kit/invoke"
 	grpc "google.golang.org/grpc"
 )
@@ -47,13 +47,13 @@ func RegisterBobServiceInvocationHandler(s common.Service, impl BobServiceHandle
 
 func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.Func {
 	return func(ctx context.Context, in *common.InvocationEvent) (*common.Content, error) {
-		b, err := content.NewBinder(in.ContentType)
+		e, err := encoding.New(in.ContentType)
 		if err != nil {
 			return nil, err
 		}
 
 		req := new(HandleRequest)
-		if err := b.Unmarshal(in.Data, req); err != nil {
+		if err := e.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
@@ -63,7 +63,7 @@ func _BobService_Handle_Invocation_Handler(handler interface{}) invoke.Func {
 			return nil, err
 		}
 
-		d, err := b.Marshal(res)
+		d, err := e.Marshal(res)
 		if err != nil {
 			return nil, err
 		}
@@ -95,10 +95,10 @@ func RegisterBobServiceBindingHandler(s common.Service, impl BobServiceHandler) 
 
 func _BobService_Handle_Binding_Handler(handler interface{}) binding.Func {
 	return func(ctx context.Context, in *common.BindingEvent) ([]byte, error) {
-		b := proto.NewBinder()
+		e := proto.NewEncoding()
 
 		req := new(HandleRequest)
-		if err := b.Unmarshal(in.Data, req); err != nil {
+		if err := e.Unmarshal(in.Data, req); err != nil {
 			return nil, err
 		}
 
@@ -108,7 +108,7 @@ func _BobService_Handle_Binding_Handler(handler interface{}) binding.Func {
 			return nil, err
 		}
 
-		d, err := b.Marshal(res)
+		d, err := e.Marshal(res)
 		if err != nil {
 			return nil, err
 		}
@@ -138,9 +138,9 @@ func (c *bobserviceInvocationClient) Handle(
 ) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	b := proto.NewBinder()
+	e := proto.NewEncoding()
 
-	req, err := b.Marshal(in)
+	req, err := e.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (c *bobserviceInvocationClient) Handle(
 	}
 
 	out := new(HandleResponse)
-	if err := b.Unmarshal(res, out); err != nil {
+	if err := e.Unmarshal(res, out); err != nil {
 		return nil, err
 	}
 
@@ -180,9 +180,9 @@ func (c *bobserviceBindingClient) Handle(
 ) (*HandleResponse, error) {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	b := proto.NewBinder()
+	e := proto.NewEncoding()
 
-	d, err := b.Marshal(in)
+	d, err := e.Marshal(in)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +203,7 @@ func (c *bobserviceBindingClient) Handle(
 	}
 
 	out := new(HandleResponse)
-	if err := b.Unmarshal(res.Data, out); err != nil {
+	if err := e.Unmarshal(res.Data, out); err != nil {
 		return nil, err
 	}
 
@@ -229,9 +229,9 @@ func (c *bobserviceOutputBindingClient) Handle(
 ) error {
 	cc := daprc.NewClientWithConnection(c.conn)
 
-	b := proto.NewBinder()
+	e := proto.NewEncoding()
 
-	d, err := b.Marshal(in)
+	d, err := e.Marshal(in)
 	if err != nil {
 		return err
 	}
